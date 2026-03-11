@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StationX Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        .admin-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: left;
+        }
+        .form-group label {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+        }
+        .form-group input, .form-group textarea {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 0.8rem 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .update-btn {
+            background: linear-gradient(135deg, #8b5cf6, #d946ef);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .update-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        }
+        .update-btn:active {
+            transform: translateY(0);
+        }
+        .success-msg {
+            color: #4ade80;
+            text-align: center;
+            font-size: 0.9rem;
+            min-height: 1.2rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .player-container {
+            max-width: 500px; /* Slightly wider for the form */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="background-animation">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <main class="player-container">
+        <header class="player-header" style="justify-content: center;">
+            <h1 class="logo">Station<span class="highlight">X</span> <span style="font-size: 1.2rem; opacity: 0.7; font-weight: 400; margin-left: 0.5rem;">Admin</span></h1>
+        </header>
+
+        <section class="admin-form">
+            <div class="form-group">
+                <label for="admin-pin">4-Digit PIN</label>
+                <input type="text" id="admin-pin" placeholder="Enter PIN from control panel" maxlength="4" style="letter-spacing: 0.2em; font-weight: bold; text-align: center;">
+            </div>
+
+            <div class="form-group">
+                <label for="song-title">Current Song / Show Title</label>
+                <input type="text" id="song-title" placeholder="e.g. Late Night Lo-Fi">
+            </div>
+            
+            <div class="form-group">
+                <label for="dj-notes">DJ Notes / Playing Next</label>
+                <textarea id="dj-notes" placeholder="e.g. Taking requests in the Discord! Coming up next: more chill vibes..."></textarea>
+            </div>
+
+            <button id="update-btn" class="update-btn">
+                <i data-lucide="send"></i> Broadcast Update
+            </button>
+            
+            <div id="status-message" class="success-msg"></div>
+        </section>
+    </main>
+
+    <script>
+        // Init Lucide Icons
+        lucide.createIcons();
+
+        // Connect to Socket.io
+        const socket = io();
+
+        const pinInput = document.getElementById('admin-pin');
+        const titleInput = document.getElementById('song-title');
+        const notesInput = document.getElementById('dj-notes');
+        const updateBtn = document.getElementById('update-btn');
+        const statusMsg = document.getElementById('status-message');
+
+        // Automatically fill current info if available on load
+        socket.on('metadata_update', (metadata) => {
+            // Only update inputs if they are currently completely empty
+            // This prevents overwriting what the admin is currently typing
+            if (titleInput.value === '' && notesInput.value === '') {
+                titleInput.value = metadata.title !== 'Waiting for stream...' ? metadata.title : '';
+                notesInput.value = metadata.notes !== 'No stream is currently active.' ? metadata.notes : '';
+            }
+        });
+
+        updateBtn.addEventListener('click', () => {
+            const pin = pinInput.value.trim();
+            const title = titleInput.value.trim();
+            const notes = notesInput.value.trim();
+            
+            if (pin.length !== 4 || isNaN(pin)) {
+                statusMsg.textContent = 'Please enter a valid 4-digit PIN!';
+                statusMsg.style.color = '#f87171';
+                setTimeout(() => statusMsg.textContent = '', 3000);
+                return;
+            }
+
+            if (!title) {
+                statusMsg.textContent = 'Please enter a song/show title!';
+                statusMsg.style.color = '#f87171'; // Red-ish error text
+                setTimeout(() => statusMsg.textContent = '', 3000);
+                return;
+            }
+
+            const metadata = {
+                pin: pin,
+                title: title,
+                notes: notes
+            };
+            
+            // Send the new metadata to the Node.js server
+            socket.emit('update_metadata', metadata);
+        });
+
+        // Listen for success or error from the server
+        socket.on('admin_success', (data) => {
+            statusMsg.textContent = 'Stream info updated successfully!';
+            statusMsg.style.color = '#4ade80'; // Green success text
+            setTimeout(() => statusMsg.textContent = '', 3000);
+        });
+
+        socket.on('admin_error', (data) => {
+            statusMsg.textContent = 'Error: ' + data.message;
+            statusMsg.style.color = '#f87171'; // Red error text
+            setTimeout(() => statusMsg.textContent = '', 3000);
+        });
+    </script>
+</body>
+</html>
