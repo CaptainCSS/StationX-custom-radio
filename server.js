@@ -23,6 +23,9 @@ let currentMetadata = {
     notes: "No stream is currently active."
 };
 
+let isStreaming = false;
+let streamTimeout = null;
+
 // Store active song requests
 let songRequests = [];
 let nextRequestId = 1;
@@ -34,7 +37,14 @@ io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
 
     // Send the current metadata to the newly connected client immediately
-    socket.emit('metadata_update', currentMetadata);
+    if (isStreaming) {
+        socket.emit('metadata_update', currentMetadata);
+    } else {
+        socket.emit('metadata_update', {
+            title: "Radio not active",
+            notes: "There is no stream coming from the broadcast."
+        });
+    }
     
     // Send existing song requests to the newly connected client
     socket.emit('all_requests', songRequests);
@@ -53,6 +63,23 @@ io.on('connection', (socket) => {
     socket.on('audio_stream', (audioData) => {
         // Broadcast the audio to everyone else (listeners)
         socket.broadcast.emit('audio_stream', audioData);
+
+        if (!isStreaming) {
+            isStreaming = true;
+            io.emit('metadata_update', currentMetadata);
+        }
+
+        if (streamTimeout) {
+            clearTimeout(streamTimeout);
+        }
+
+        streamTimeout = setTimeout(() => {
+            isStreaming = false;
+            io.emit('metadata_update', {
+                title: "Radio not active",
+                notes: "There is no stream coming from the broadcast."
+            });
+        }, 3000);
     });
 
     // Handle metadata updates from Broadcaster or Admin
@@ -82,7 +109,9 @@ io.on('connection', (socket) => {
         };
         console.log('Metadata updated:', currentMetadata);
         // Broadcast metadata to all connected clients
-        io.emit('metadata_update', currentMetadata);
+        if (isStreaming) {
+            io.emit('metadata_update', currentMetadata);
+        }
         
         // Let the sender know it was successful
         socket.emit('admin_success', { message: 'Update successful' });
