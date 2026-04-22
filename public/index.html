@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Radio Stream</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Load Socket.io client library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+
+<body>
+    <!-- Username Modal Overlay -->
+    <div id="username-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="modal-title">Welcome to Station<span class="highlight">X</span></h2>
+            <p class="modal-desc">Please enter a username to tune in.</p>
+            <form id="username-form">
+                <div class="input-group">
+                    <i data-lucide="user" class="input-icon"></i>
+                    <input type="text" id="join-username" placeholder="Choose a username" required autocomplete="off">
+                </div>
+                <button type="submit" class="submit-btn" id="join-btn">
+                    <i data-lucide="radio"></i>
+                    <span>Start Listening</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <div class="background-animation">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="content-wrapper">
+        <main class="player-container">
+            <header class="player-header">
+                <div class="live-indicator">
+                    <span class="dot"></span>
+                    <span>LIVE NOW</span>
+                </div>
+                <h1 class="logo">Station<span class="highlight">X</span></h1>
+            </header>
+
+            <section class="now-playing">
+                <div class="artwork-container">
+                    <div class="artwork-pulse"></div>
+                    <!-- Interactive generic modern album artwork -->
+                    <div class="artwork">
+                        <i data-lucide="radio" class="radio-icon"></i>
+                    </div>
+                </div>
+
+                <div class="track-info">
+                    <h2 id="song-title" class="song-title">Connecting...</h2>
+                    <div class="dj-notes-container">
+                        <i data-lucide="message-square-quote" class="note-icon"></i>
+                        <p id="dj-notes" class="dj-notes">Waiting for broadcaster...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="controls">
+                <!-- Hidden audio element for playback -->
+                <audio id="audio-player" class="hidden"></audio>
+
+                <button id="play-btn" class="play-btn">
+                    <i data-lucide="play" id="play-icon"></i>
+                    <i data-lucide="pause" id="pause-icon" class="hidden"></i>
+                </button>
+
+                <div class="volume-control">
+                    <i data-lucide="volume-2" class="volume-icon"></i>
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.8"
+                        class="volume-slider">
+                </div>
+
+                <div id="status-message" class="status">Click Play to listen.</div>
+            </section>
+        </main>
+
+        <section class="request-container player-container">
+            <h2 class="request-header">Request a Song</h2>
+            <form id="request-form" class="request-form">
+                <div class="input-group">
+                    <i data-lucide="user" class="input-icon"></i>
+                    <input type="text" id="req-username" placeholder="Username" required>
+                </div>
+                <div class="input-group">
+                    <i data-lucide="music" class="input-icon"></i>
+                    <input type="text" id="req-song" placeholder="Song Name" required>
+                </div>
+                <div class="input-group">
+                    <i data-lucide="mic" class="input-icon"></i>
+                    <input type="text" id="req-artist" placeholder="Artist (Optional)">
+                </div>
+                <button type="submit" class="submit-btn" id="req-submit">
+                    <i data-lucide="send"></i>
+                    <span>Send Request</span>
+                </button>
+                <div id="req-status" class="status hidden">Request sent!</div>
+            </form>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Initialize lucide icons
+        lucide.createIcons();
+    </script>
+    <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script>
+    <script type='text/javascript'>
+        kofiwidget2.init('Support the development!', '#72a4f2', 'G2G51VT389');
+        kofiwidget2.draw();
+    </script>
+</body>
+
+</html>
